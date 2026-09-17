@@ -1,16 +1,17 @@
+from sample_data import resting_data #Tester ett scenario først
 class Participant:
-    def _init_(self, name): #En deltaker må ha et navn
+    def __init__(self, name): #En deltaker må ha et navn
         self.name = name
         self.reference_measurements = reference_measurements #Composition: en participant har referansemålinger
 
 class ReferenceMeasurements:
-    def _init_(self, heart_rate, temperature, activity_level): #Målingene inneholder puls, temp, aktivitetsnivå
+    def __init__(self, heart_rate, temperature, activity_level): #Målingene inneholder puls, temp, aktivitetsnivå
         self.heart_rate = heart_rate
         self.temperature = temperature
         self.activity_level = activity_level
 
 class Observation: #Inneholder alle de forskjellige observasjonene
-    def _init_(self, timestamp, heart_rate, skin_response, temperature, acitvity_level, signal_quality):
+    def __init__(self, timestamp, heart_rate, skin_response, temperature, acitvity_level, signal_quality):
         self.timestamp = timestamp
         self.heart_rate = heart_rate
         self.skin_response = skin_response
@@ -32,7 +33,7 @@ class Observation: #Inneholder alle de forskjellige observasjonene
         return True
 
 class Session: #Composition: session inneholder observation-objekter
-    def _init_(self, participant):
+    def __init__(self, participant):
         self.participant = participant
         self.observations = [] #I hver sesjon er det observert forskjellig ting. Lagres her 
     
@@ -50,7 +51,7 @@ def calculate_average(values): #Funksjon for å beregne gjennomsnitt
 def calculate_minimum(values): #Funksjon for minimum verdi
     if len(values) == 0:
         return None
-     return min(values)
+    return min(values)
 
 def calculate_maximum(values):
     if len(values) == 0:
@@ -93,3 +94,19 @@ def classify_session(observations):
         return "Moderate activity"
     
     return "High activity" #Alt annet er høyt
+
+#Kjører resting_data 
+observations = []
+
+for data in resting_data:
+    observation = Observation(
+        data["timestamp"],
+        data["heart_rate"],
+        data["skin_response"],
+        data["temperature"],
+        data["activity_level"],
+        data["signal_quality"]
+    )
+
+    observations.append(observation)
+print(len(observations))
