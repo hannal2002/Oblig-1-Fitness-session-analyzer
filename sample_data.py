@@ -19,7 +19,7 @@ resting_data = [ #Også aantakelser
     }
 ]
 
-moderate_date = [
+moderate_data = [
     {
         "timestamp": 1, 
         "heart_rate": 105,
@@ -99,6 +99,6 @@ invalid_data = [
         "skin_response": 2.0, 
         "temperature": 33.1,
         "activity_level": 0.4, 
-        "signal_quality": 0.95
+        "signal_quality": 0.95 
     }
 ]

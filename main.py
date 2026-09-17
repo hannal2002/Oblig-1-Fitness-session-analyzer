@@ -1,6 +1,6 @@
-from sample_data import resting_data #Tester ett scenario først
+from sample_data import resting_data, moderate_data, high_data, recovery_data, invalid_data #Tester dette først
 class Participant:
-    def __init__(self, name): #En deltaker må ha et navn
+    def __init__(self, name, reference_measurements): #En deltaker må ha et navn
         self.name = name
         self.reference_measurements = reference_measurements #Composition: en participant har referansemålinger
 
@@ -79,7 +79,7 @@ def classify_session(observations):
     activity_levels = []
 
     for observation in observations: #Gå gjennom listen
-        activity_levels.append(observation.activity_levels) #Får ny liste
+        activity_levels.append(observation.activity_level) #Får ny liste
     
     average_activity = calculate_average(activity_levels) #Beregner gjennomsnittet for nivået
 
@@ -95,10 +95,14 @@ def classify_session(observations):
     
     return "High activity" #Alt annet er høyt
 
+reference = ReferenceMeasurements(70,32.5,0.1)
+participant = Participant("Test Participant", reference)
+session = Session(Participant)
+
 #Kjører resting_data 
 observations = []
 
-for data in resting_data:
+for data in recovery_data:
     observation = Observation(
         data["timestamp"],
         data["heart_rate"],
@@ -108,5 +112,5 @@ for data in resting_data:
         data["signal_quality"]
     )
 
-    observations.append(observation)
-print(len(observations))
+    session.add_observation(observation)
+print(classify_session(session.observations))
