@@ -18,6 +18,19 @@ class Observation: #Inneholder alle de forskjellige observasjonene
         self.activity_level = acitvity_level
         self.signal_quality = signal_quality
 
+    #Må validere observasjoner
+    def is_valid(self): #En metode som sjekker gyldighetene til de ulike målingene
+        if self.heart_rate is None or self.signal_quality is None or self.activity_level is None: #Sjekker om verdien i det hele tatt finnes
+            return False
+        if self.signal_quality < 0.5: #En antakelse at 0.5 kan funke som en grense
+            return False
+        if self.heart_rate <= 0:
+            return False
+        if self.activity_level < 0:
+            return False
+
+        return True
+
 class Session: #Composition: session inneholder observation-objekter
     def _init_(self, participant):
         self.participant = participant
