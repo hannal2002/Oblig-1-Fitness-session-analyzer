@@ -55,16 +55,39 @@ python tests.py
 On my Windows system, Python is run with only 'python' insted of 'python3'.
 
 ## Example output
-Example output when the program receives invalid sensor data:
+When running `main.py`, the program analyzes five different scenarios:
+resting, moderate activity, high activity, recovery and invalid sensor data.
+Example output from the resting session:
+
+    ==============================
+    Resting session
+    ==============================
 
     Fitness session report:
-    Usable observations: 0
-    Classification: Insufficient data
-    Explanation: There are fewer than two usable observations.
+    Usable observations: 2
+    Classification: Resting
+    Explanation: The average activity level is below 0.3.
+
+    Heart rate:
+     Average: 71.0
+     Minimum: 70
+     Maximum: 72
+
+    Activity level:
+     Average: 0.125
+     Minimum: 0.1
+     Maximum: 0.15
+
+    Comparison with reference:
+     Heart rate difference: 1.0
+     Activity level difference: 0.024999999999999994
+
+The other scenarios are classified as moderate activity, high activity,
+recovering or insufficient data depending on the observations.
 
 ## Known limitations
 The project uses simulated sensor data and simple fixed thresholds.
-
 Recovery detection only compares the final observations and is therefore a
-simplified model of real fitness recovery. The program does not connect to real wearable sensors and does not store data
+simplified model of real fitness recovery. 
+The program does not connect to real wearable sensors and does not store data
 between program runs.
