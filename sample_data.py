@@ -83,3 +83,22 @@ recovery_data = [
         "signal_quality": 0.96
     }
 ]
+
+invalid_data = [
+    {
+        "timestamp": 1, 
+        "heart_rate": 120, 
+        "skin_response": 2.1, 
+        "temperature": 33.0,
+        "activity_level": 0.5, 
+        "signal_quality": 0.2
+    },
+    {
+        "timestamp": 2, 
+        "heart_rate": -10, 
+        "skin_response": 2.0, 
+        "temperature": 33.1,
+        "activity_level": 0.4, 
+        "signal_quality": 0.95
+    }
+]
