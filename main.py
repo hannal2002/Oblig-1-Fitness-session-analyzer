@@ -99,10 +99,10 @@ reference = ReferenceMeasurements(70,32.5,0.1)
 participant = Participant("Test Participant", reference)
 session = Session(Participant)
 
-#Kjører resting_data 
-observations = []
 
-for data in recovery_data:
+#Ulike dataer fra sample_data
+
+for data in invalid_data:
     observation = Observation(
         data["timestamp"],
         data["heart_rate"],
@@ -113,4 +113,5 @@ for data in recovery_data:
     )
 
     session.add_observation(observation)
+print(len(session.observations))
 print(classify_session(session.observations))
