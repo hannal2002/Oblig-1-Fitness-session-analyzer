@@ -1,19 +1,25 @@
 from sample_data import resting_data, moderate_data, high_data, recovery_data, invalid_data #Tester dette først
+
+#Klasse for en deltaker og at den deltakeren har personlige referanseverdier
 class Participant:
     def __init__(self, name, reference_measurements): #En deltaker må ha et navn
         self.name = name
+        #Composition: en participant har et referenceMeasurements-objekt
+        #Protected-style attributt brukes som en del av encapsulation
         self._reference_measurements = reference_measurements #Composition: en participant har referansemålinger
 
     @property #Kontrollert tilgang. Behandles som internt
     def reference_measurements(self):
         return self._reference_measurements
 
+#Her er deltakerens personlige referanseverdier
 class ReferenceMeasurements:
     def __init__(self, heart_rate, temperature, activity_level): #Målingene inneholder puls, temp, aktivitetsnivå
         self.heart_rate = heart_rate
         self.temperature = temperature
         self.activity_level = activity_level
 
+#èn observasjon fra de simulerte sensorene
 class Observation: #Inneholder alle de forskjellige observasjonene
     def __init__(self, timestamp, heart_rate, skin_response, temperature, acitvity_level, signal_quality):
         self.timestamp = timestamp
@@ -23,6 +29,7 @@ class Observation: #Inneholder alle de forskjellige observasjonene
         self.activity_level = acitvity_level
         self.signal_quality = signal_quality
     
+    #Gjør om dictionary-data fra sample_data om til et Observation-objekt
     @classmethod
     def from_dict(cls, data):
         return cls(
@@ -34,7 +41,7 @@ class Observation: #Inneholder alle de forskjellige observasjonene
             data["signal_quality"]
         )
 
-    #Må validere observasjoner
+    #Må validere observasjoner. Avviser manglende, umulige eller for dårlige sensorverdier
     def is_valid(self): #En metode som sjekker gyldighetene til de ulike målingene
         if self.heart_rate is None or self.signal_quality is None or self.activity_level is None: #Sjekker om verdien i det hele tatt finnes
             return False
@@ -47,6 +54,7 @@ class Observation: #Inneholder alle de forskjellige observasjonene
 
         return True
 
+#Composition: en Session inneholder en Participant og en liste med Observation-objekter
 class Session: #Composition: session inneholder observation-objekter
     def __init__(self, participant):
         self.participant = participant
@@ -87,6 +95,7 @@ def detect_recovery(observations):
         return True
     return False
 
+#Klassifiserer hele økta ut fra brukbare observasjoner
 def classify_session(observations):
     if len(observations) < 2:
         return "Insufficient data"
@@ -98,6 +107,7 @@ def classify_session(observations):
     
     average_activity = calculate_average(activity_levels) #Beregner gjennomsnittet for nivået
 
+#Recovery sjekkes først fordi utviklingen på slutten av økta er viktigere enn gjennomsnittlig aktivitetsnivå
     if detect_recovery(observations): #Sjekker om det er recovery her
         return "Recovering"
     
@@ -110,7 +120,8 @@ def classify_session(observations):
     
     return "High activity" #Alt annet er høyt
 
-def explain_classification(observations): #Krav om å forklare klassifiseringene
+#En forklaring på hvorfor økten fikk sin klassifisering
+def explain_classification(observations): 
     classification = classify_session(observations)
 
     if classification == "Insufficient data":
@@ -144,6 +155,7 @@ def analyze_session(session): #Tar imot en økt
         heart_rates.append(observation.heart_rate)
         activity_levels.append(observation.activity_level)
     
+    #Returnere samme struktur selv om ingen observasjoner kunne brukes
     if len(session.observations) == 0: 
         return {
             "usable_observations": 0,
@@ -165,7 +177,7 @@ def analyze_session(session): #Tar imot en økt
             }
         }
     
-    result = { #Lager en dictionary med resultatene
+    result = { #Lager en dictionary med resultatene som også kan brukes senere
         "usable_observations": len(session.observations),
         "classification": classify_session(session.observations),
         "explanation": explain_classification(session.observations),
@@ -179,6 +191,7 @@ def analyze_session(session): #Tar imot en økt
             "minimum": calculate_minimum(activity_levels),
             "maximum": calculate_maximum(activity_levels)
         },
+        #Sammenligner gjennomsnittet fra økten med deltakerens egne referanseverdier
         "reference_comparison":{
             "heart_rate_difference": calculate_average(heart_rates) - session.participant.reference_measurements.heart_rate,
             "activity_difference": calculate_average(activity_levels) - session.participant.reference_measurements.activity_level
@@ -208,25 +221,32 @@ def print_report(result):
     print(" Activity level difference:", result["reference_comparison"]["activity_difference"])
 
 
-
-
-
-
-
-
+#Kjøres kun når bare main.py kjører direkte
 if __name__ == "__main__":
-
     reference = ReferenceMeasurements(70,32.5,0.1)
     participant = Participant("Test Participant", reference)
-    session = Session(participant)
+
+    #Kjører alle scenarioene for å se
+    scenarios = {
+            "Resting session": resting_data,
+            "Moderate activity": moderate_data,
+            "High activity": high_data,
+            "Recovery": recovery_data,
+            "Invalid data": invalid_data
+        }
+
+    for scenario_name, data_set in scenarios.items():
+        print("\n==============================")
+        print(scenario_name)
+        print("==============================")
 
 
-    #Ulike data fra sample_data
-    for data in invalid_data:
-        observation = Observation.from_dict(data)
-        session.add_observation(observation)
+        session = Session(participant)
 
-    result = analyze_session(session)
+        for data in data_set:
+            observation = Observation.from_dict(data)
+            session.add_observation(observation)
 
-    print_report(result)
+        result = analyze_session(session)
+        print_report(result)
 
