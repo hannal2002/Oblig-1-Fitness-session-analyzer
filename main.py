@@ -110,6 +110,30 @@ def classify_session(observations):
     
     return "High activity" #Alt annet er høyt
 
+def explain_classification(observations): #Krav om å forklare klassifiseringene
+    classification = classify_session(observations)
+
+    if classification == "Insufficient data":
+        return "There are fewer than two usable observations."
+
+    if classification == "Recovering":
+        return "Heart rate and activity level decreased at the end of the session."
+
+    activity_levels = []
+
+    for observation in observations:
+        activity_levels.append(observation.activity_level)
+
+    average_activity = calculate_average(activity_levels)
+
+    if classification == "Resting":
+        return "The average activity level is below 0.3."
+
+    if classification == "Moderate activity":
+        return "The average activity level is between 0.3 and 0.7."
+
+    return "The average activity level is 0.7 or higher."
+
 
 #Samle resultene fra økta på ett sted
 def analyze_session(session): #Tar imot en økt
@@ -124,6 +148,7 @@ def analyze_session(session): #Tar imot en økt
         return {
             "usable_observations": 0,
             "classification": "Insufficient data", 
+            "explanation": explain_classification(session.observations),
             "heart_rate": {
                 "average": None, 
                 "minimum": None, 
@@ -143,6 +168,7 @@ def analyze_session(session): #Tar imot en økt
     result = { #Lager en dictionary med resultatene
         "usable_observations": len(session.observations),
         "classification": classify_session(session.observations),
+        "explanation": explain_classification(session.observations),
         "heart_rate": {
             "average": calculate_average(heart_rates),
             "minimum": calculate_minimum(heart_rates),
@@ -165,6 +191,7 @@ def print_report(result):
     print("\nFitness session report:")
     print("Usable observations:", result["usable_observations"])
     print("Classification:", result["classification"])
+    print("Explanation:", result["explanation"])
 
     print("\nHeart rate:") 
     print(" Average:", result["heart_rate"]["average"]) #Går inn i dictionary og finner puls og så average
