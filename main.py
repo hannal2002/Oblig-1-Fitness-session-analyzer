@@ -39,3 +39,20 @@ class Session: #Composition: session inneholder observation-objekter
     def add_observation(self, observation):
         if observation.is_valid(): #Bare hvis det er gyldig så blir det lagt til i lista
             self.observations.append(observation) #Legger observasjonene i lista
+
+
+#Behøver 4 standalone funksjoner
+def calculate_average(values): #Funksjon for å beregne gjennomsnitt
+    if len(values) == 0: #Hvis listen er tom, returner ingenting
+        return None
+    return sum(values) / len(values) #Summerer tallene, teller tallene. Får gjennomsnitt
+
+def calculate_minimum(values): #Funksjon for minimum verdi
+    if len(values) == 0:
+        return None
+     return min(values)
+
+def calculate_maximum(values):
+    if len(values) == 0:
+        return None
+    return max(values)
