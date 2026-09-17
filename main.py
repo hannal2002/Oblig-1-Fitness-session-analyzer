@@ -66,7 +66,30 @@ def detect_recovery(observations):
     previous = observations[-2] #Hente nest siste element
     last = observations [-1] #Hente siste element
 
-    #Sammenligner elementene
+    #Sammenligner elementene. Begge må være synkende for recovery
     if last.heart_rate < previous.heart_rate and last.activity_level < previous.activity_level:
         return True
     return False
+
+def classify_session(observations):
+    if len(observations) < 2:
+        return "Insufficient data"
+    
+    activity_levels = []
+
+    for observation in observations: #Gå gjennom listen
+        activity_levels.append(observation.activity_levels) #Får ny liste
+    
+    average_activity = calculate_average(activity_levels) #Beregner gjennomsnittet for nivået
+
+    if detect_recovery(observations): #Sjekker om det er recovery her
+        return "Recovering"
+    
+    #Aktivitetsnivå: lav, moderat og høy
+    if average_activity < 0.3: #Bare en antakelse med 0.3
+        return "Resting"
+    
+    if average_activity < 0.7: #Enda en antakelse
+        return "Moderate activity"
+    
+    return "High activity" #Alt annet er høyt
