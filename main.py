@@ -2,7 +2,11 @@ from sample_data import resting_data, moderate_data, high_data, recovery_data, i
 class Participant:
     def __init__(self, name, reference_measurements): #En deltaker må ha et navn
         self.name = name
-        self.reference_measurements = reference_measurements #Composition: en participant har referansemålinger
+        self._reference_measurements = reference_measurements #Composition: en participant har referansemålinger
+
+    @property #Kontrollert tilgang. Behandles som internt
+    def reference_measurements(self):
+        return self._reference_measurements
 
 class ReferenceMeasurements:
     def __init__(self, heart_rate, temperature, activity_level): #Målingene inneholder puls, temp, aktivitetsnivå
@@ -18,6 +22,17 @@ class Observation: #Inneholder alle de forskjellige observasjonene
         self.temperature = temperature
         self.activity_level = acitvity_level
         self.signal_quality = signal_quality
+    
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            data["timestamp"],
+            data["heart_rate"],
+            data["skin_response"],
+            data["temperature"],
+            data["activity_level"],
+            data["signal_quality"]
+        )
 
     #Må validere observasjoner
     def is_valid(self): #En metode som sjekker gyldighetene til de ulike målingene
@@ -105,6 +120,26 @@ def analyze_session(session): #Tar imot en økt
         heart_rates.append(observation.heart_rate)
         activity_levels.append(observation.activity_level)
     
+    if len(session.observations) == 0: 
+        return {
+            "usable_observations": 0,
+            "classification": "Insufficient data", 
+            "heart_rate": {
+                "average": None, 
+                "minimum": None, 
+                "maximum": None
+            }, 
+            "activity_level": {
+                "average": None, 
+                "minimum": None, 
+                "maximum": None
+            },
+            "reference_comparison": {
+                "heart_rate_difference": None, 
+                "activity_difference": None
+            }
+        }
+    
     result = { #Lager en dictionary med resultatene
         "usable_observations": len(session.observations),
         "classification": classify_session(session.observations),
@@ -117,6 +152,10 @@ def analyze_session(session): #Tar imot en økt
             "average": calculate_average(activity_levels),
             "minimum": calculate_minimum(activity_levels),
             "maximum": calculate_maximum(activity_levels)
+        },
+        "reference_comparison":{
+            "heart_rate_difference": calculate_average(heart_rates) - session.participant.reference_measurements.heart_rate,
+            "activity_difference": calculate_average(activity_levels) - session.participant.reference_measurements.activity_level
         }
     }
     return result
@@ -137,6 +176,9 @@ def print_report(result):
     print(" Minimum:", result["activity_level"]["minimum"])
     print(" Maximum:", result["activity_level"]["maximum"])
 
+    print("\nComparison with reference:")
+    print(" Heart rate difference:", result["reference_comparison"]["heart_rate_difference"])
+    print(" Activity level difference:", result["reference_comparison"]["activity_difference"])
 
 
 
@@ -145,60 +187,19 @@ def print_report(result):
 
 
 
+if __name__ == "__main__":
 
-reference = ReferenceMeasurements(70,32.5,0.1)
-participant = Participant("Test Participant", reference)
-session = Session(participant)
-
-
-#Ulike dataer fra sample_data
-
-for data in resting_data:
-    observation = Observation(
-        data["timestamp"],
-        data["heart_rate"],
-        data["skin_response"],
-        data["temperature"],
-        data["activity_level"],
-        data["signal_quality"]
-    )
-
-    session.add_observation(observation)
-
-#Legger til utregning for de ulike relevante
-heart_rates = []
-
-for observation in session.observations:
-    heart_rates.append(observation.heart_rate)
-
-average_heart_rate = calculate_average(heart_rates)
-heart_rate_difference = average_heart_rate - participant.reference_measurements.heart_rate
-minimum_heart_rate = calculate_minimum(heart_rates)
-maximum_heart_rate = calculate_maximum(heart_rates)
-
-print("Average heart rate:", average_heart_rate)
-print("Heart rate difference from reference:", heart_rate_difference)
-print("Minimum heart rate:", minimum_heart_rate)
-print("Maximum heart rate:", maximum_heart_rate)
-
-#Aktivitetsnivå
-activity_levels = []
-
-for observation in session.observations:
-    activity_levels.append(observation.activity_level)
-
-average_activity = calculate_average(activity_levels)
-minimum_activity = calculate_minimum(activity_levels)
-maximum_activity = calculate_maximum(activity_levels)
-
-print("Average activity level:", average_activity)
-print("Minimum activity level:", minimum_activity)
-print("Maximum activity level", maximum_activity)
+    reference = ReferenceMeasurements(70,32.5,0.1)
+    participant = Participant("Test Participant", reference)
+    session = Session(participant)
 
 
-print(len(session.observations))
-print(classify_session(session.observations))
+    #Ulike data fra sample_data
+    for data in invalid_data:
+        observation = Observation.from_dict(data)
+        session.add_observation(observation)
 
+    result = analyze_session(session)
 
-result = analyze_session(session)
-print_report(result)
+    print_report(result)
+
