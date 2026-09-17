@@ -95,9 +95,60 @@ def classify_session(observations):
     
     return "High activity" #Alt annet er høyt
 
+
+#Samle resultene fra økta på ett sted
+def analyze_session(session): #Tar imot en økt
+    heart_rates = [] 
+    activity_levels = []
+
+    for observation in session.observations:#Legger verdiene i de tilhørene listene
+        heart_rates.append(observation.heart_rate)
+        activity_levels.append(observation.activity_level)
+    
+    result = { #Lager en dictionary med resultatene
+        "usable_observations": len(session.observations),
+        "classification": classify_session(session.observations),
+        "heart_rate": {
+            "average": calculate_average(heart_rates),
+            "minimum": calculate_minimum(heart_rates),
+            "maximum": calculate_maximum(heart_rates)
+        },
+        "activity_level": {
+            "average": calculate_average(activity_levels),
+            "minimum": calculate_minimum(activity_levels),
+            "maximum": calculate_maximum(activity_levels)
+        }
+    }
+    return result
+
+#Lage noe lesbart for utskriften
+def print_report(result):
+    print("\nFitness session report:")
+    print("Usable observations:", result["usable_observations"])
+    print("Classification:", result["classification"])
+
+    print("\nHeart rate:") 
+    print(" Average:", result["heart_rate"]["average"]) #Går inn i dictionary og finner puls og så average
+    print(" Minimum:", result["heart_rate"]["minimum"])
+    print(" Maximum:", result["heart_rate"]["maximum"])
+
+    print("\nActivity level:")
+    print(" Average:", result["activity_level"]["average"])
+    print(" Minimum:", result["activity_level"]["minimum"])
+    print(" Maximum:", result["activity_level"]["maximum"])
+
+
+
+
+
+
+
+
+
+
 reference = ReferenceMeasurements(70,32.5,0.1)
 participant = Participant("Test Participant", reference)
-session = Session(Participant)
+session = Session(participant)
 
 
 #Ulike dataer fra sample_data
@@ -114,14 +165,40 @@ for data in resting_data:
 
     session.add_observation(observation)
 
+#Legger til utregning for de ulike relevante
 heart_rates = []
 
 for observation in session.observations:
     heart_rates.append(observation.heart_rate)
 
 average_heart_rate = calculate_average(heart_rates)
+heart_rate_difference = average_heart_rate - participant.reference_measurements.heart_rate
+minimum_heart_rate = calculate_minimum(heart_rates)
+maximum_heart_rate = calculate_maximum(heart_rates)
 
 print("Average heart rate:", average_heart_rate)
+print("Heart rate difference from reference:", heart_rate_difference)
+print("Minimum heart rate:", minimum_heart_rate)
+print("Maximum heart rate:", maximum_heart_rate)
+
+#Aktivitetsnivå
+activity_levels = []
+
+for observation in session.observations:
+    activity_levels.append(observation.activity_level)
+
+average_activity = calculate_average(activity_levels)
+minimum_activity = calculate_minimum(activity_levels)
+maximum_activity = calculate_maximum(activity_levels)
+
+print("Average activity level:", average_activity)
+print("Minimum activity level:", minimum_activity)
+print("Maximum activity level", maximum_activity)
+
 
 print(len(session.observations))
 print(classify_session(session.observations))
+
+
+result = analyze_session(session)
+print_report(result)
