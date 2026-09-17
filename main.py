@@ -56,3 +56,17 @@ def calculate_maximum(values):
     if len(values) == 0:
         return None
     return max(values)
+
+
+#Må finne ut av recovery basert på puls og aktivitet på slutten av en økt
+def detect_recovery(observations):
+    if len(observations) < 2: #Har vi færre enn 2 observasjoner kan vi ikke finne ut av om verdien har sunket
+        return False
+    
+    previous = observations[-2] #Hente nest siste element
+    last = observations [-1] #Hente siste element
+
+    #Sammenligner elementene
+    if last.heart_rate < previous.heart_rate and last.activity_level < previous.activity_level:
+        return True
+    return False
