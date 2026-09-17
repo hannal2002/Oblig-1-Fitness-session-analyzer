@@ -18,7 +18,9 @@ The possible classifications are:
 - Insufficient data
 
 ## Classes 
-The project currently has four main classes: Participant (represent a participant in the session with name and reference measurements), ReferenceMeasurements (stores reference values), Observation (stores information about one observation for the wearable sensor), and Session (represents a complete session containing a participant and a list of valid observation objects). 
+The project currently has four main classes: Participant (represent a participant in the session with name and reference measurements), ReferenceMeasurements (stores reference values), Observation (stores information about one observation for the wearable sensor), and Session (represents a complete session containing a participant and a list of valid observation objects).
+
+The Observation class also has a class method called from_dict(). It is used to create Observation objects directly from the dictionaries in the sample data. This keeps the conversion from dictionary data to Observation objects inside the class that is responsible for the observations.
 
 ## Composition, encapsulation and inheritance
 Composition is used with Participant having ReferenceMeasurements, and a Session has a Participant and multiple Observation objects.
@@ -28,7 +30,7 @@ Encapsulation is used when the reference measurements are stored in the protecte
 Inheritance is not used bc there's no natural "is-a" relationship between the classes.
 
 ## Assumptions and classification rules
-There are many assumptions in this project regarding to numbers and when to accept or reject and so on.
+The project uses some assumed threshold values for validation and classification.
 Observations with a signal quality below 0.5 are rejected. Heart rate must be greater than 0 and activity level cannot be negative. At least two usable observations are required to classify a session.
 
 The classification rules are:
@@ -52,7 +54,7 @@ python main.py
 Run the tests: 
 python tests.py
 
-On my Windows system, Python is run with only 'python' insted of 'python3'.
+On my Windows system, Python is run with python. On systems where Python uses the python3 command, run python3 main.py instead.
 
 ## Example output
 When running `main.py`, the program analyzes five different scenarios:
