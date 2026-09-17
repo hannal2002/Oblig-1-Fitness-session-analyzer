@@ -37,4 +37,5 @@ class Session: #Composition: session inneholder observation-objekter
         self.observations = [] #I hver sesjon er det observert forskjellig ting. Lagres her 
     
     def add_observation(self, observation):
-        self.observations.append(observation) #Legger observasjonene i lista
+        if observation.is_valid(): #Bare hvis det er gyldig så blir det lagt til i lista
+            self.observations.append(observation) #Legger observasjonene i lista
