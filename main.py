@@ -102,7 +102,7 @@ session = Session(Participant)
 
 #Ulike dataer fra sample_data
 
-for data in invalid_data:
+for data in resting_data:
     observation = Observation(
         data["timestamp"],
         data["heart_rate"],
@@ -113,5 +113,15 @@ for data in invalid_data:
     )
 
     session.add_observation(observation)
+
+heart_rates = []
+
+for observation in session.observations:
+    heart_rates.append(observation.heart_rate)
+
+average_heart_rate = calculate_average(heart_rates)
+
+print("Average heart rate:", average_heart_rate)
+
 print(len(session.observations))
 print(classify_session(session.observations))
