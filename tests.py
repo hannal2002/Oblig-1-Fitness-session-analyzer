@@ -8,54 +8,74 @@ from main import (
     analyze_session
 )
 
-from sample_data import (
-    resting_data,
-    moderate_data,
-    high_data,
-    recovery_data,
-    invalid_data
-)
+from data_generator import generate_fitness_data
 
 
 class TestFitnessSessionAnalyzer(unittest.TestCase):
 
-    def create_session(self, data):
-        reference = ReferenceMeasurements(70, 32.5, 0.1)
-        participant = Participant("Test Participant", reference)
+    #Lager en komplett Session ved hjelp av data_generator
+    def create_session(self, scenario):
+        profile, observations = generate_fitness_data(
+            participant_id="TEST001",
+            scenario=scenario,
+            seed=42,
+            number_of_windows=10
+        )
+
+        reference = ReferenceMeasurements(
+            profile["baseline_heart_rate"],
+            profile["baseline_skin_response"],
+            profile["baseline_temperature"]
+        )
+
+        participant = Participant(
+            profile["participant_id"],
+            reference
+        )
+
         session = Session(participant)
 
-        for item in data:
-            observation = Observation.from_dict(item)
+        for data in observations:
+            observation = Observation.from_dict(data)
             session.add_observation(observation)
 
         return session
 
-    def test_resting_session(self): #Forventer resting fra denne testen
-        session = self.create_session(resting_data)
+    #Tester et normalt hvilescenario
+    def test_resting_session(self):
+        session = self.create_session("resting")
         result = analyze_session(session)
 
         self.assertEqual(result["classification"], "Resting")
+        self.assertEqual(result["usable_observations"], 10)
 
-    def test_moderate_session(self):
-        session = self.create_session(moderate_data)
+    #Tester moderat aktivitet
+    def test_moderate_activity(self):
+        session = self.create_session("moderate_activity")
         result = analyze_session(session)
 
         self.assertEqual(result["classification"], "Moderate activity")
+        self.assertEqual(result["usable_observations"], 10)
 
-    def test_high_activity_session(self):
-        session = self.create_session(high_data)
+    #Tester høy aktivitet
+    def test_high_activity(self):
+        session = self.create_session("high_activity")
         result = analyze_session(session)
 
         self.assertEqual(result["classification"], "High activity")
+        self.assertEqual(result["usable_observations"], 10)
 
-    def test_recovery_session(self):
-        session = self.create_session(recovery_data)
+    #Tester recovery der puls og aktivitet synker
+    def test_recovery(self):
+        session = self.create_session("recovery")
         result = analyze_session(session)
 
         self.assertEqual(result["classification"], "Recovering")
+        self.assertEqual(result["usable_observations"], 10)
 
-    def test_invalid_data(self):
-        session = self.create_session(invalid_data)
+    #Tester ugyldige og dårlige sensordata
+    def test_poor_quality(self):
+        session = self.create_session("poor_quality")
         result = analyze_session(session)
 
         self.assertEqual(result["classification"], "Insufficient data")

@@ -1,9 +1,7 @@
-from sample_data import resting_data, moderate_data, high_data, recovery_data, invalid_data #Tester dette først
-
-#Klasse for en deltaker og at den deltakeren har personlige referanseverdier
+from data_generator import available_scenarios, generate_fitness_data
 class Participant:
-    def __init__(self, name, reference_measurements): #En deltaker må ha et navn
-        self.name = name
+    def __init__(self, participant_id, reference_measurements): #En deltaker må ha et navn
+        self.participant_id = participant_id
         #Composition: en participant har et referenceMeasurements-objekt
         #Protected-style attributt brukes som en del av encapsulation
         self._reference_measurements = reference_measurements #Composition: en participant har referansemålinger
@@ -14,22 +12,22 @@ class Participant:
 
 #Her er deltakerens personlige referanseverdier
 class ReferenceMeasurements:
-    def __init__(self, heart_rate, temperature, activity_level): #Målingene inneholder puls, temp, aktivitetsnivå
+    def __init__(self, heart_rate, skin_response, temperature):
         self.heart_rate = heart_rate
+        self.skin_response = skin_response
         self.temperature = temperature
-        self.activity_level = activity_level
 
 #èn observasjon fra de simulerte sensorene
 class Observation: #Inneholder alle de forskjellige observasjonene
-    def __init__(self, timestamp, heart_rate, skin_response, temperature, acitvity_level, signal_quality):
+    def __init__(self, timestamp, heart_rate, skin_response, temperature, activity_level, signal_quality):
         self.timestamp = timestamp
         self.heart_rate = heart_rate
         self.skin_response = skin_response
         self.temperature = temperature
-        self.activity_level = acitvity_level
+        self.activity_level = activity_level
         self.signal_quality = signal_quality
     
-    #Gjør om dictionary-data fra sample_data om til et Observation-objekt
+    #Gjør om dictionary-data fra data_generator til et Observation-objekt
     @classmethod
     def from_dict(cls, data):
         return cls(
@@ -42,14 +40,39 @@ class Observation: #Inneholder alle de forskjellige observasjonene
         )
 
     #Må validere observasjoner. Avviser manglende, umulige eller for dårlige sensorverdier
-    def is_valid(self): #En metode som sjekker gyldighetene til de ulike målingene
-        if self.heart_rate is None or self.signal_quality is None or self.activity_level is None: #Sjekker om verdien i det hele tatt finnes
+    def is_valid(self):
+    # Reject observations where required sensor values are missing
+        if (
+            self.timestamp is None
+            or self.heart_rate is None
+            or self.skin_response is None
+            or self.temperature is None
+            or self.activity_level is None
+            or self.signal_quality is None
+        ):
             return False
-        if self.signal_quality < 0.5: #En antakelse at 0.5 kan funke som en grense
+
+        # Values outside the expected ranges are treated as invalid
+        if not isinstance(self.timestamp, int) or self.timestamp < 0:
             return False
-        if self.heart_rate <= 0:
+
+        if self.heart_rate < 35 or self.heart_rate > 205:
             return False
-        if self.activity_level < 0:
+
+        if self.skin_response < 0:
+            return False
+
+        if self.temperature < 25 or self.temperature > 42:
+            return False
+
+        if self.activity_level < 0 or self.activity_level > 1:
+            return False
+
+        if self.signal_quality < 0 or self.signal_quality > 1:
+            return False
+
+        # Measurements with low signal quality are rejected
+        if self.signal_quality < 0.5:
             return False
 
         return True
@@ -84,15 +107,40 @@ def calculate_maximum(values):
 
 #Må finne ut av recovery basert på puls og aktivitet på slutten av en økt
 def detect_recovery(observations):
-    if len(observations) < 2: #Har vi færre enn 2 observasjoner kan vi ikke finne ut av om verdien har sunket
+    # Vi trenger flere observasjoner for å se en tydelig utvikling
+    if len(observations) < 6:
         return False
-    
-    previous = observations[-2] #Hente nest siste element
-    last = observations [-1] #Hente siste element
 
-    #Sammenligner elementene. Begge må være synkende for recovery
-    if last.heart_rate < previous.heart_rate and last.activity_level < previous.activity_level:
+    first_observations = observations[:3]
+    last_observations = observations[-3:]
+
+    first_heart_rates = []
+    last_heart_rates = []
+    first_activity_levels = []
+    last_activity_levels = []
+
+    for observation in first_observations:
+        first_heart_rates.append(observation.heart_rate)
+        first_activity_levels.append(observation.activity_level)
+
+    for observation in last_observations:
+        last_heart_rates.append(observation.heart_rate)
+        last_activity_levels.append(observation.activity_level)
+
+    first_average_hr = calculate_average(first_heart_rates)
+    last_average_hr = calculate_average(last_heart_rates)
+
+    first_average_activity = calculate_average(first_activity_levels)
+    last_average_activity = calculate_average(last_activity_levels)
+
+   # Beregner hvor mye puls og aktivitet har sunket
+    heart_rate_drop = first_average_hr - last_average_hr
+    activity_drop = first_average_activity - last_average_activity
+
+    # Recovery krever en tydelig nedgang i både puls og aktivitet
+    if heart_rate_drop >= 15 and activity_drop >= 0.2:
         return True
+
     return False
 
 #Klassifiserer hele økta ut fra brukbare observasjoner
@@ -150,10 +198,12 @@ def explain_classification(observations):
 def analyze_session(session): #Tar imot en økt
     heart_rates = [] 
     activity_levels = []
+    temperatures = []
 
     for observation in session.observations:#Legger verdiene i de tilhørene listene
         heart_rates.append(observation.heart_rate)
         activity_levels.append(observation.activity_level)
+        temperatures.append(observation.temperature)
     
     #Returnere samme struktur selv om ingen observasjoner kunne brukes
     if len(session.observations) == 0: 
@@ -173,7 +223,7 @@ def analyze_session(session): #Tar imot en økt
             },
             "reference_comparison": {
                 "heart_rate_difference": None, 
-                "activity_difference": None
+                "temperature_difference": None
             }
         }
     
@@ -194,7 +244,8 @@ def analyze_session(session): #Tar imot en økt
         #Sammenligner gjennomsnittet fra økten med deltakerens egne referanseverdier
         "reference_comparison":{
             "heart_rate_difference": calculate_average(heart_rates) - session.participant.reference_measurements.heart_rate,
-            "activity_difference": calculate_average(activity_levels) - session.participant.reference_measurements.activity_level
+
+            "temperature_difference": calculate_average(temperatures) - session.participant.reference_measurements.temperature
         }
     }
     return result
@@ -206,8 +257,8 @@ def print_report(result):
     print("Classification:", result["classification"])
     print("Explanation:", result["explanation"])
 
-    print("\nHeart rate:") 
-    print(" Average:", result["heart_rate"]["average"]) #Går inn i dictionary og finner puls og så average
+    print("\nHeart rate:")
+    print(" Average:", result["heart_rate"]["average"])
     print(" Minimum:", result["heart_rate"]["minimum"])
     print(" Maximum:", result["heart_rate"]["maximum"])
 
@@ -217,36 +268,56 @@ def print_report(result):
     print(" Maximum:", result["activity_level"]["maximum"])
 
     print("\nComparison with reference:")
-    print(" Heart rate difference:", result["reference_comparison"]["heart_rate_difference"])
-    print(" Activity level difference:", result["reference_comparison"]["activity_difference"])
+    print(
+        " Heart rate difference:",
+        result["reference_comparison"]["heart_rate_difference"]
+    )
+    print(
+    " Temperature difference:",
+    result["reference_comparison"]["temperature_difference"]
+)
 
 
-#Kjøres kun når bare main.py kjører direkte
-if __name__ == "__main__":
-    reference = ReferenceMeasurements(70,32.5,0.1)
-    participant = Participant("Test Participant", reference)
-
-    #Kjører alle scenarioene for å se
-    scenarios = {
-            "Resting session": resting_data,
-            "Moderate activity": moderate_data,
-            "High activity": high_data,
-            "Recovery": recovery_data,
-            "Invalid data": invalid_data
-        }
-
-    for scenario_name, data_set in scenarios.items():
+def main():
+    # Kjører alle scenarioene som finnes i foreleserens data-generator
+    for scenario in available_scenarios():
         print("\n==============================")
-        print(scenario_name)
+        print(scenario)
         print("==============================")
 
+        # Henter deltakerprofil og rå observasjoner fra generatoren
+        profile, observations = generate_fitness_data(
+            participant_id="P001",
+            scenario=scenario,
+            seed=42,
+            number_of_windows=10
+        )
+
+        # Lager våre egne objekter fra dataene generatoren returnerer
+        reference = ReferenceMeasurements(
+            profile["baseline_heart_rate"],
+            profile["baseline_skin_response"],
+            profile["baseline_temperature"]
+        )
+
+        participant = Participant(
+            profile["participant_id"],
+            reference
+        )
 
         session = Session(participant)
 
-        for data in data_set:
+        # Gjør dictionary-data om til Observation-objekter
+        # og legger bare gyldige observasjoner til i session
+        for data in observations:
             observation = Observation.from_dict(data)
             session.add_observation(observation)
 
         result = analyze_session(session)
         print_report(result)
+
+
+# Kjøres kun når main.py kjøres direkte
+if __name__ == "__main__":
+    main()
 

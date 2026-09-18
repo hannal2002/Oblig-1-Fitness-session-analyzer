@@ -5,11 +5,9 @@ Student: Hanna Linnea Østern
 Student number: 385548
 
 ## About the project
-This project is a Python program for analyzing fitness sessions using simulated data from wearable devices. The program uses sensor measurements such as heart rate, temperature, skin response, signal quality and activity level to analyze a training session. 
+This project is a Python program for analyzing fitness sessions using simulated data from wearable devices. The project uses the instructor-supplied `data_generator.py` to generate simulated participant profiles and observations. The supplied generator has not been modified. 
 
-The observations are validated before they are added to a session. The program
-calculates statistics, compares measurements with reference values and classifies
-the fitness session.
+The observations are validated before they are added to a session. The program calculates statistics, compares measurements with the participant's reference values and classifies the fitness session.
 The possible classifications are:
 - Resting
 - Moderate activity
@@ -30,16 +28,30 @@ Encapsulation is used when the reference measurements are stored in the protecte
 Inheritance is not used bc there's no natural "is-a" relationship between the classes.
 
 ## Assumptions and classification rules
-The project uses some assumed threshold values for validation and classification.
-Observations with a signal quality below 0.5 are rejected. Heart rate must be greater than 0 and activity level cannot be negative. At least two usable observations are required to classify a session.
+The project uses some assumed threshold values for validation and classification. An observation is rejected if required sensor values are missing or outside the accepted ranges. The validation rules are:
+- Timestamp must be an integer of 0 or greater.
+- Heart rate must be between 35 and 205 beats per minute.
+- Skin response must be 0 or greater.
+- Temperature must be between 25 and 42 degrees Celsius.
+- Activity level must be between 0 and 1.
+- Signal quality must be between 0 and 1.
+- Observations with signal quality below 0.5 are rejected.
+- At least two usable observations are required to classify a session.
 
-The classification rules are:
+The activity classification rules are:
 - Average activity below 0.3: Resting
 - Average activity from 0.3 to below 0.7: Moderate activity
 - Average activity of 0.7 or higher: High activity
-- If heart rate and activity level both decrease at the end of the session: Recovering
 
-Recovery is checked before the activity-level classification
+Recovery is checked before the activity-level classification. At least six usable observations are required for recovery detection. The average heart rate and activity level of the first three observations are compared with the last three observations. A session is classified as Recovering when heart rate decreases by at least 15 beats per minute and activity level decreases by at least 0.2.
+
+## Project structure
+Repository contains: 
+- 'main.py': classes, validation, analysis, classification and the main program.
+- 'data_generator.py': generator for simulated fitness data.
+- `tests.py': unit tests for the five generated scenarios.
+- `README.md': project documentation.
+- `requirements.txt': mpty because the project only uses the Python standard library
 
 ## How to run
 Clone the repository: 
@@ -57,32 +69,32 @@ python tests.py
 On my Windows system, Python is run with python. On systems where Python uses the python3 command, run python3 main.py instead.
 
 ## Example output
-When running `main.py`, the program analyzes five different scenarios:
-resting, moderate activity, high activity, recovery and invalid sensor data.
+When running `main.py', the program analyzes five different scenarios:
+resting, moderate activity, high activity, recovery and poor quality. 
 Example output from the resting session:
 
     ==============================
-    Resting session
+    resting
     ==============================
 
     Fitness session report:
-    Usable observations: 2
+    Usable observations: 10
     Classification: Resting
     Explanation: The average activity level is below 0.3.
 
     Heart rate:
-     Average: 71.0
-     Minimum: 70
-     Maximum: 72
+    Average: 80.4
+    Minimum: 76
+    Maximum: 85
 
     Activity level:
-     Average: 0.125
-     Minimum: 0.1
-     Maximum: 0.15
+    Average: 0.11499999999999999
+    Minimum: 0.04
+    Maximum: 0.18
 
     Comparison with reference:
-     Heart rate difference: 1.0
-     Activity level difference: 0.024999999999999994
+    Heart rate difference: 2.4000000000000057
+    Temperature difference: 0.008000000000002672
 
 The other scenarios are classified as moderate activity, high activity,
 recovering or insufficient data depending on the observations.
